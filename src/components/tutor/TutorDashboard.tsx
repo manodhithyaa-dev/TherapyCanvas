@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { Header } from '@/components/Header';
 import { AuthoringStudio } from './AuthoringStudio';
+import { PublishActivityModal } from './PublishActivityModal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
@@ -11,14 +13,20 @@ import {
   TrendingUp,
   Users,
   FileText,
-  Play
+  Play,
+  Store,
+  Upload
 } from 'lucide-react';
+import { Activity } from '@/types/therapy';
 
 type View = 'dashboard' | 'studio';
 
 export function TutorDashboard() {
-  const { activities, setCurrentActivity } = useApp();
+  const { activities, setCurrentActivity, publishActivity } = useApp();
   const [view, setView] = useState<View>('dashboard');
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [activityToPublish, setActivityToPublish] = useState<Activity | null>(null);
+  const navigate = useNavigate();
 
   if (view === 'studio') {
     return <AuthoringStudio />;
@@ -68,12 +76,15 @@ export function TutorDashboard() {
             <p className="text-sm text-muted-foreground">3 students</p>
           </Card>
 
-          <Card className="p-5 cursor-pointer hover:shadow-medium transition-all group">
+          <Card 
+            className="p-5 cursor-pointer hover:shadow-medium transition-all group"
+            onClick={() => navigate('/marketplace')}
+          >
             <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-              <TrendingUp className="w-6 h-6 text-muted-foreground" />
+              <Store className="w-6 h-6 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-foreground mb-1">Analytics</h3>
-            <p className="text-sm text-muted-foreground">View progress</p>
+            <h3 className="font-semibold text-foreground mb-1">Marketplace</h3>
+            <p className="text-sm text-muted-foreground">Browse & publish</p>
           </Card>
         </div>
 
@@ -107,25 +118,54 @@ export function TutorDashboard() {
               {activities.slice(0, 6).map((activity) => (
                 <Card 
                   key={activity.id} 
-                  className="p-4 cursor-pointer hover:shadow-medium transition-all group"
-                  onClick={() => setCurrentActivity(activity)}
+                  className="p-4 hover:shadow-medium transition-all group relative"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-10 h-10 gradient-warm rounded-lg flex items-center justify-center">
                       <FileText className="w-5 h-5 text-primary-foreground" />
                     </div>
-                    <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Play className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button 
+                        variant="ghost" 
+                        size="icon-sm"
+                        onClick={() => setCurrentActivity(activity)}
+                      >
+                        <Play className="w-4 h-4" />
+                      </Button>
+                      {!activity.isPublished && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActivityToPublish(activity);
+                            setPublishModalOpen(true);
+                          }}
+                          title="Publish to Marketplace"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
+                  <h3 
+                    className="font-semibold text-foreground mb-1 line-clamp-1 cursor-pointer"
+                    onClick={() => setCurrentActivity(activity)}
+                  >
                     {activity.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>
-                      {new Date(activity.updatedAt).toLocaleDateString()}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {new Date(activity.updatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {activity.isPublished && (
+                      <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">
+                        Published
+                      </span>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -159,6 +199,26 @@ export function TutorDashboard() {
           </div>
         </div>
       </main>
+
+      {activityToPublish && (
+        <PublishActivityModal
+          activity={activityToPublish}
+          open={publishModalOpen}
+          onClose={() => {
+            setPublishModalOpen(false);
+            setActivityToPublish(null);
+          }}
+          onPublish={(marketplaceData) => {
+            publishActivity(activityToPublish, marketplaceData);
+            // Mark activity as published
+            setActivities(activities.map(a => 
+              a.id === activityToPublish.id 
+                ? { ...a, isPublished: true }
+                : a
+            ));
+          }}
+        />
+      )}
     </div>
   );
 }

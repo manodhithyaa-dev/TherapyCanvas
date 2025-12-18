@@ -7,9 +7,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { languages } from '@/data/assets';
-import { ArrowLeft, Globe, Sparkles } from 'lucide-react';
+import { ArrowLeft, Globe, Sparkles, User, LogOut, Store, Settings } from 'lucide-react';
 import { Language } from '@/types/therapy';
+import { useNavigate } from 'react-router-dom';
+import { setGoogleLanguage } from '@/lib/setLanguage';
 
 interface HeaderProps {
   showBack?: boolean;
@@ -18,7 +29,20 @@ interface HeaderProps {
 }
 
 export function Header({ showBack, onBack, title }: HeaderProps) {
-  const { userRole, setUserRole, currentLanguage, setCurrentLanguage } = useApp();
+  const { user, userRole, setUserRole, currentLanguage, setCurrentLanguage, logout } = useApp();
+  const navigate = useNavigate();
+
+  const handleLanguageChange = (value: string) => {
+    const lang = value as Language;
+    setCurrentLanguage(lang);
+    // Set Google Translate language
+    setGoogleLanguage(lang);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
@@ -46,7 +70,7 @@ export function Header({ showBack, onBack, title }: HeaderProps) {
         <div className="flex items-center gap-3">
           <Select 
             value={currentLanguage} 
-            onValueChange={(value) => setCurrentLanguage(value as Language)}
+            onValueChange={handleLanguageChange}
           >
             <SelectTrigger className="w-[140px] h-9">
               <Globe className="w-4 h-4 mr-2" />
@@ -60,14 +84,59 @@ export function Header({ showBack, onBack, title }: HeaderProps) {
               ))}
             </SelectContent>
           </Select>
-          
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setUserRole(null)}
-          >
-            Switch Role
-          </Button>
+
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Avatar className="w-7 h-7">
+                    <AvatarFallback className="text-xs">
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{user.name}</span>
+                    <span className="text-xs text-muted-foreground font-normal">{user.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/marketplace')}>
+                  <Store className="w-4 h-4 mr-2" />
+                  Marketplace
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate('/login')}
+              >
+                Sign In
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => navigate('/signup')}
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

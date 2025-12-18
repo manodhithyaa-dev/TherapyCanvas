@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@/types/therapy';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Users, Sparkles } from 'lucide-react';
@@ -7,6 +8,8 @@ interface RoleSelectorProps {
 }
 
 export function RoleSelector({ onSelectRole }: RoleSelectorProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
@@ -104,9 +107,33 @@ export function RoleSelector({ onSelectRole }: RoleSelectorProps) {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground">
-          Made with ❤️ for inclusive therapy in India • Supports 10+ languages
-        </p>
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Made with ❤️ for inclusive therapy in India • Supports 10+ languages
+          </p>
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign In
+            </button>
+            <span className="text-muted-foreground">•</span>
+            <button
+              onClick={() => navigate('/signup')}
+              className="text-primary hover:underline font-medium"
+            >
+              Sign Up
+            </button>
+            <span className="text-muted-foreground">•</span>
+            <button
+              onClick={() => navigate('/marketplace')}
+              className="text-primary hover:underline font-medium"
+            >
+              Browse Marketplace
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

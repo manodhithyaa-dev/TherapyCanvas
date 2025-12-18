@@ -257,3 +257,55 @@
     min-width: 44px;
   }
 }
+
+/* Hide Google Translate UI completely but keep functionality */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+.goog-te-gadget {
+  display: none !important;
+}
+
+.goog-te-gadget-simple {
+  display: none !important;
+}
+
+#google_translate_element {
+  display: none !important;
+}
+
+/* Hide Google Translate iframes */
+iframe.goog-te-banner-frame,
+iframe.goog-te-menu-frame {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide the select dropdown but keep it functional */
+.goog-te-combo {
+  display: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* Hide any Google Translate related elements */
+.goog-te-menu-frame,
+.goog-te-menu-value,
+.goog-te-menu2,
+.goog-te-menu-value span {
+  display: none !important;
+}
