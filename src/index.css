@@ -1,0 +1,259 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    /* Warm, Indian-inspired palette */
+    --background: 38 45% 97%;
+    --foreground: 25 30% 15%;
+
+    --card: 38 40% 99%;
+    --card-foreground: 25 30% 15%;
+
+    --popover: 38 40% 99%;
+    --popover-foreground: 25 30% 15%;
+
+    /* Saffron/Orange - Primary */
+    --primary: 28 89% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Peacock Teal - Secondary */
+    --secondary: 174 72% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Warm cream */
+    --muted: 38 30% 92%;
+    --muted-foreground: 25 15% 45%;
+
+    /* Accent - warm gold */
+    --accent: 45 93% 58%;
+    --accent-foreground: 25 30% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Soft borders */
+    --border: 38 25% 88%;
+    --input: 38 25% 88%;
+    --ring: 28 89% 52%;
+
+    --radius: 1rem;
+
+    /* Custom colors */
+    --success: 152 69% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --tutor: 28 89% 52%;
+    --tutor-foreground: 0 0% 100%;
+    
+    --family: 174 72% 40%;
+    --family-foreground: 0 0% 100%;
+
+    /* Gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(28 89% 52%) 0%, hsl(45 93% 58%) 100%);
+    --gradient-cool: linear-gradient(135deg, hsl(174 72% 40%) 0%, hsl(190 70% 50%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(38 45% 97%) 0%, hsl(38 30% 92%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(38 40% 99%) 0%, hsl(38 35% 96%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(25 30% 15% / 0.1);
+    --shadow-medium: 0 8px 30px -8px hsl(25 30% 15% / 0.15);
+    --shadow-glow-primary: 0 8px 30px -8px hsl(28 89% 52% / 0.4);
+    --shadow-glow-secondary: 0 8px 30px -8px hsl(174 72% 40% / 0.4);
+
+    --sidebar-background: 38 40% 99%;
+    --sidebar-foreground: 25 30% 15%;
+    --sidebar-primary: 28 89% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 38 30% 92%;
+    --sidebar-accent-foreground: 25 30% 15%;
+    --sidebar-border: 38 25% 88%;
+    --sidebar-ring: 28 89% 52%;
+  }
+
+  .dark {
+    --background: 25 25% 10%;
+    --foreground: 38 30% 95%;
+
+    --card: 25 20% 14%;
+    --card-foreground: 38 30% 95%;
+
+    --popover: 25 20% 14%;
+    --popover-foreground: 38 30% 95%;
+
+    --primary: 28 89% 55%;
+    --primary-foreground: 25 30% 10%;
+
+    --secondary: 174 65% 45%;
+    --secondary-foreground: 25 30% 10%;
+
+    --muted: 25 15% 20%;
+    --muted-foreground: 38 20% 65%;
+
+    --accent: 45 85% 55%;
+    --accent-foreground: 25 30% 10%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 25 15% 22%;
+    --input: 25 15% 22%;
+    --ring: 28 89% 55%;
+
+    --sidebar-background: 25 20% 12%;
+    --sidebar-foreground: 38 30% 95%;
+    --sidebar-primary: 28 89% 55%;
+    --sidebar-primary-foreground: 25 30% 10%;
+    --sidebar-accent: 25 15% 18%;
+    --sidebar-accent-foreground: 38 30% 95%;
+    --sidebar-border: 25 15% 22%;
+    --sidebar-ring: 28 89% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
+
+  .gradient-cool {
+    background: var(--gradient-cool);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-glow-primary {
+    box-shadow: var(--shadow-glow-primary);
+  }
+
+  .shadow-glow-secondary {
+    box-shadow: var(--shadow-glow-secondary);
+  }
+
+  .text-gradient-warm {
+    background: var(--gradient-warm);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-cool {
+    background: var(--gradient-cool);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animation utilities */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  .animate-bounce-soft {
+    animation: bounce-soft 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Drag and drop styles */
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing !important;
+}
+
+.drop-zone-active {
+  @apply ring-2 ring-primary ring-offset-2;
+}
+
+/* Canvas editor styles */
+.canvas-grid {
+  background-image: 
+    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Touch-friendly */
+@media (hover: none) and (pointer: coarse) {
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
