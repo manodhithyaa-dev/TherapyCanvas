@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -17,14 +17,17 @@ import {
   TrendingUp,
   Clock,
   Check,
-  ShoppingCart
+  ShoppingCart,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { MarketplaceActivity, IndianRegion, Language, ActivityType } from '@/types/therapy';
 import { indianRegions } from '@/data/regions';
 import { languages } from '@/data/assets';
+import { marketplaceApi, purchaseApi } from '@/lib/api';
+import { PurchaseButton } from '@/components/marketplace/PurchaseButton';
 
-// Mock marketplace data
+// Fallback mock marketplace data
 const mockMarketplaceActivities: MarketplaceActivity[] = [
   {
     id: 'market-1',
@@ -113,9 +116,72 @@ export default function Marketplace() {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | 'all'>('all');
   const [selectedType, setSelectedType] = useState<ActivityType | 'all'>('all');
   const [priceFilter, setPriceFilter] = useState<'all' | 'free' | 'paid'>('all');
+  const [activities, setActivities] = useState<MarketplaceActivity[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Combine published activities with mock data for demo
-  const allActivities = [...publishedActivities, ...mockMarketplaceActivities];
+  useEffect(() => {
+    loadMarketplaceActivities();
+  }, [selectedRegion, selectedLanguage, selectedType, priceFilter, searchQuery]);
+
+  const loadMarketplaceActivities = async () => {
+    try {
+      setLoading(true);
+      const response = await marketplaceApi.getMarketplaceActivities({
+        region: selectedRegion === 'all' ? undefined : selectedRegion,
+        language: selectedLanguage === 'all' ? undefined : selectedLanguage,
+        type: selectedType === 'all' ? undefined : selectedType,
+        price: priceFilter,
+        search: searchQuery || undefined,
+      });
+
+      // Convert backend format to frontend format
+      const convertedActivities: MarketplaceActivity[] = response.activities.map((a: any) => ({
+        id: a.id,
+        title: a.title,
+        type: a.type as any,
+        language: a.language as any,
+        description: a.description || '',
+        elements: a.elements || [],
+        createdAt: new Date(a.createdAt),
+        updatedAt: new Date(a.updatedAt),
+        authorId: a.authorId,
+        isPublished: a.isPublished,
+        tags: a.tags || [],
+        author: a.author || {
+          id: a.authorId,
+          name: 'Unknown',
+          region: 'north',
+        },
+        price: a.price || 0,
+        pricingModel: a.pricingModel || 'free',
+        purchaseCount: a.purchaseCount || 0,
+        rating: a.rating || 0,
+        reviewCount: a.reviewCount || 0,
+        ageRange: a.ageRange,
+        therapyGoals: a.therapyGoals || [],
+        diagnosisTags: a.diagnosisTags || [],
+        thumbnail: a.thumbnail,
+        previewUrl: a.previewUrl,
+      }));
+
+      // Combine with locally published activities
+      const allActivities = [...publishedActivities, ...convertedActivities];
+      setActivities(allActivities);
+    } catch (err: any) {
+      console.error('Error loading marketplace activities:', err);
+      // Fallback to mock data
+      setActivities([...publishedActivities, ...mockMarketplaceActivities]);
+      toast({
+        title: 'Using Demo Data',
+        description: 'Could not connect to backend. Showing sample activities.',
+        variant: 'default',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const allActivities = activities;
 
   const filteredActivities = allActivities.filter((activity) => {
     const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -253,7 +319,14 @@ export default function Marketplace() {
             </Badge>
           </div>
 
-          {filteredActivities.length === 0 ? (
+          {loading ? (
+            <Card className="p-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Loading activities...</h3>
+            </Card>
+          ) : filteredActivities.length === 0 ? (
             <Card className="p-12 text-center">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-8 h-8 text-muted-foreground" />
@@ -340,71 +413,12 @@ export default function Marketplace() {
                       )}
                     </div>
 
-                    {(() => {
-                      const purchased = isPurchased(activity.id);
-                      const isFree = activity.pricingModel === 'free';
-                      
-                      return (
-                        <Button 
-                          className="w-full" 
-                          variant={purchased ? 'outline' : (isFree ? 'default' : 'tutor')}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (purchased) {
-                              toast({
-                                title: 'Already Purchased',
-                                description: 'You already own this activity',
-                              });
-                              return;
-                            }
-                            
-                            if (isFree) {
-                              // Free download
-                              purchaseActivity(activity.id, 0);
-                              toast({
-                                title: 'Downloaded!',
-                                description: 'Activity added to your library',
-                              });
-                            } else {
-                              // Paid purchase
-                              if (!user) {
-                                toast({
-                                  title: 'Sign In Required',
-                                  description: 'Please sign in to purchase activities',
-                                  variant: 'destructive',
-                                });
-                                return;
-                              }
-                              
-                              if (purchaseActivity(activity.id, activity.price)) {
-                                toast({
-                                  title: 'Purchase Successful!',
-                                  description: `You've purchased "${activity.title}" for ₹${activity.price}`,
-                                });
-                              }
-                            }
-                          }}
-                          disabled={purchased}
-                        >
-                          {purchased ? (
-                            <>
-                              <Check className="w-4 h-4 mr-2" />
-                              Purchased
-                            </>
-                          ) : isFree ? (
-                            <>
-                              <Download className="w-4 h-4 mr-2" />
-                              Download Free
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingCart className="w-4 h-4 mr-2" />
-                              Buy ₹{activity.price}
-                            </>
-                          )}
-                        </Button>
-                      );
-                    })()}
+                    <PurchaseButton
+                      activity={activity}
+                      user={user}
+                      isPurchased={isPurchased(activity.id)}
+                      purchaseActivity={purchaseActivity}
+                    />
                   </div>
                 </Card>
               ))}

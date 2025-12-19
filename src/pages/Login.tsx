@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { GraduationCap, Users, Sparkles, ArrowLeft } from 'lucide-react';
-import { UserRole } from '@/types/therapy';
+import { GraduationCap, Users, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
+import { UserRole, IndianRegion } from '@/types/therapy';
+import { authApi } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,33 +17,63 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     if (!role) {
       setError('Please select your role');
+      setLoading(false);
       return;
     }
 
     if (!email || !password) {
       setError('Please fill in all fields');
+      setLoading(false);
       return;
     }
 
-    // Simulate login - in real app, this would call an API
-    const mockUser = {
-      id: `user-${Date.now()}`,
-      email,
-      name: email.split('@')[0],
-      role,
-      region: role === 'tutor' ? 'north' as const : undefined,
-      createdAt: new Date(),
-    };
+    try {
+      const response = await authApi.login({ email, password });
 
-    setUser(mockUser);
-    navigate('/');
+      // Verify role matches
+      if (response.user.role !== role) {
+        setError(`This account is registered as a ${response.user.role}, not ${role}`);
+        setLoading(false);
+        return;
+      }
+
+      // Convert backend user format to frontend format
+      const user = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role as UserRole,
+        region: response.user.region as IndianRegion | undefined,
+        avatar: response.user.avatar,
+        createdAt: new Date(response.user.createdAt),
+        lastLoginAt: response.user.lastLoginAt ? new Date(response.user.lastLoginAt) : undefined,
+      };
+
+      setUser(user);
+      toast({
+        title: 'Welcome Back!',
+        description: `Logged in as ${user.name}`,
+      });
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password');
+      toast({
+        title: 'Login Failed',
+        description: err.message || 'Please check your credentials and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!role) {
@@ -178,8 +210,20 @@ export default function Login() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" variant={role === 'tutor' ? 'tutor' : 'family'}>
-              Sign In
+            <Button 
+              type="submit" 
+              className="w-full" 
+              variant={role === 'tutor' ? 'tutor' : 'family'}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </form>
 

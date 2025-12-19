@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { Header } from '@/components/Header';
@@ -15,18 +15,63 @@ import {
   FileText,
   Play,
   Store,
-  Upload
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { Activity } from '@/types/therapy';
+import { activityApi, marketplaceApi } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 type View = 'dashboard' | 'studio';
 
 export function TutorDashboard() {
-  const { activities, setCurrentActivity, publishActivity } = useApp();
+  const { user, activities, setActivities, setCurrentActivity, publishActivity } = useApp();
   const [view, setView] = useState<View>('dashboard');
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [activityToPublish, setActivityToPublish] = useState<Activity | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.id) {
+      loadActivities();
+    }
+  }, [user?.id]);
+
+  const loadActivities = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      const response = await activityApi.getActivities({ authorId: user.id });
+      
+      // Convert backend format to frontend format
+      const convertedActivities: Activity[] = response.activities.map((a: any) => ({
+        id: a.id,
+        title: a.title,
+        type: a.type as any,
+        language: a.language as any,
+        description: a.description || '',
+        elements: a.elements || [],
+        createdAt: new Date(a.createdAt),
+        updatedAt: new Date(a.updatedAt),
+        authorId: a.authorId,
+        isPublished: a.isPublished,
+        tags: a.tags || [],
+      }));
+      
+      setActivities(convertedActivities);
+    } catch (err: any) {
+      console.error('Error loading activities:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load activities',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (view === 'studio') {
     return <AuthoringStudio />;
@@ -99,7 +144,14 @@ export function TutorDashboard() {
             </Button>
           </div>
 
-          {activities.length === 0 ? (
+          {loading ? (
+            <Card className="p-8 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Loading activities...</h3>
+            </Card>
+          ) : activities.length === 0 ? (
             <Card className="p-8 text-center">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-muted-foreground" />
@@ -208,14 +260,25 @@ export function TutorDashboard() {
             setPublishModalOpen(false);
             setActivityToPublish(null);
           }}
-          onPublish={(marketplaceData) => {
-            publishActivity(activityToPublish, marketplaceData);
-            // Mark activity as published
-            setActivities(activities.map(a => 
-              a.id === activityToPublish.id 
-                ? { ...a, isPublished: true }
-                : a
-            ));
+          onPublish={async (marketplaceData) => {
+            try {
+              await marketplaceApi.publishActivity(activityToPublish.id, marketplaceData);
+              publishActivity(activityToPublish, marketplaceData);
+              // Mark activity as published
+              setActivities(activities.map(a => 
+                a.id === activityToPublish.id 
+                  ? { ...a, isPublished: true }
+                  : a
+              ));
+              // Reload activities to get updated data
+              loadActivities();
+            } catch (err: any) {
+              toast({
+                title: 'Publish Failed',
+                description: err.message || 'Failed to publish activity',
+                variant: 'destructive',
+              });
+            }
           }}
         />
       )}

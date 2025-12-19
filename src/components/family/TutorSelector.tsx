@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Star, MapPin, Users, Check } from 'lucide-react';
+import { Star, MapPin, Users, Check, Loader2 } from 'lucide-react';
 import { Tutor, IndianRegion } from '@/types/therapy';
 import { indianRegions } from '@/data/regions';
+import { tutorApi } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
-// Mock tutors data
+// Fallback mock tutors data (if API fails)
 const mockTutors: Tutor[] = [
   {
     id: 'tutor-1',
@@ -99,8 +101,57 @@ interface TutorSelectorProps {
 
 export function TutorSelector({ selectedTutorId, onSelectTutor }: TutorSelectorProps) {
   const [selectedRegion, setSelectedRegion] = useState<IndianRegion | 'all'>('all');
+  const [tutors, setTutors] = useState<Tutor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredTutors = mockTutors.filter(tutor => 
+  useEffect(() => {
+    loadTutors();
+  }, [selectedRegion]);
+
+  const loadTutors = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await tutorApi.getTutors(selectedRegion === 'all' ? undefined : selectedRegion);
+      
+      // Convert backend format to frontend format
+      const convertedTutors: Tutor[] = response.tutors.map((t: any) => ({
+        id: t.id,
+        email: t.email,
+        name: t.name,
+        role: 'tutor' as const,
+        region: t.region,
+        specialization: t.specialization || [],
+        experience: t.experience,
+        qualifications: t.qualifications || [],
+        bio: t.bio,
+        rating: t.rating || 0,
+        totalStudents: t.totalStudents || 0,
+        totalActivities: t.totalActivities || 0,
+        verified: t.verified || false,
+        createdAt: new Date(t.createdAt),
+      }));
+      
+      setTutors(convertedTutors);
+    } catch (err: any) {
+      console.error('Error loading tutors:', err);
+      setError('Failed to load tutors');
+      // Fallback to mock data
+      setTutors(mockTutors.filter(tutor => 
+        selectedRegion === 'all' || tutor.region === selectedRegion
+      ));
+      toast({
+        title: 'Using Demo Data',
+        description: 'Could not connect to backend. Showing sample tutors.',
+        variant: 'default',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTutors = tutors.filter(tutor => 
     selectedRegion === 'all' || tutor.region === selectedRegion
   );
 
@@ -201,14 +252,23 @@ export function TutorSelector({ selectedTutorId, onSelectTutor }: TutorSelectorP
         })}
       </div>
 
-      {filteredTutors.length === 0 && (
+      {loading && (
+        <Card className="p-12 text-center">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+          </div>
+          <h3 className="font-semibold text-foreground mb-2">Loading therapists...</h3>
+        </Card>
+      )}
+
+      {!loading && filteredTutors.length === 0 && (
         <Card className="p-12 text-center">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <MapPin className="w-8 h-8 text-muted-foreground" />
           </div>
           <h3 className="font-semibold text-foreground mb-2">No therapists found</h3>
           <p className="text-muted-foreground">
-            Try selecting a different region
+            {error || 'Try selecting a different region'}
           </p>
         </Card>
       )}

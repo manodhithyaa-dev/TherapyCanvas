@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GraduationCap, Users, Sparkles, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Users, Sparkles, ArrowLeft, Loader2 } from 'lucide-react';
 import { UserRole, IndianRegion } from '@/types/therapy';
 import { indianRegions } from '@/data/regions';
+import { authApi } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -20,43 +22,74 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [region, setRegion] = useState<IndianRegion>('north');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     if (!role) {
       setError('Please select your role');
+      setLoading(false);
       return;
     }
 
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
       return;
     }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
+      setLoading(false);
       return;
     }
 
-    // Simulate signup - in real app, this would call an API
-    const mockUser = {
-      id: `user-${Date.now()}`,
-      email,
-      name,
-      role,
-      region: role === 'tutor' ? region : undefined,
-      createdAt: new Date(),
-    };
+    try {
+      const response = await authApi.signup({
+        email,
+        password,
+        name,
+        role,
+        region: role === 'tutor' ? region : undefined,
+      });
 
-    setUser(mockUser);
-    navigate('/');
+      // Convert backend user format to frontend format
+      const user = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role as UserRole,
+        region: response.user.region as IndianRegion | undefined,
+        avatar: response.user.avatar,
+        createdAt: new Date(response.user.createdAt),
+        lastLoginAt: response.user.lastLoginAt ? new Date(response.user.lastLoginAt) : undefined,
+      };
+
+      setUser(user);
+      toast({
+        title: 'Account Created!',
+        description: 'Welcome to TherapyCanvas',
+      });
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create account. Please try again.');
+      toast({
+        title: 'Signup Failed',
+        description: err.message || 'Please check your information and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!role) {
@@ -235,8 +268,20 @@ export default function Signup() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" variant={role === 'tutor' ? 'tutor' : 'family'}>
-              Create Account
+            <Button 
+              type="submit" 
+              className="w-full" 
+              variant={role === 'tutor' ? 'tutor' : 'family'}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </form>
 

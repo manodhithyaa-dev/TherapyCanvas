@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Header } from '@/components/Header';
 import { ActivityPlayer } from './ActivityPlayer';
@@ -17,9 +17,12 @@ import {
   Users,
   BookOpen,
   ShoppingBag,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { Activity, CanvasElement, MarketplaceActivity } from '@/types/therapy';
+import { purchaseApi } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 // Sample activities for demo
 const sampleActivities: Activity[] = [
@@ -310,13 +313,64 @@ export function FamilyDashboard() {
     (user as any)?.selectedTutorId
   );
   const [activeTab, setActiveTab] = useState<'activities' | 'tutors' | 'purchases'>('tutors');
+  const [purchasedActivities, setPurchasedActivities] = useState<MarketplaceActivity[]>([]);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
   
   const allActivities = [...sampleActivities, ...activities];
   
-  // Get purchased activities
-  const purchasedActivities = publishedActivities.filter(activity => 
-    purchases.some(p => p.activityId === activity.id && p.userId === user?.id)
-  );
+  useEffect(() => {
+    if (user?.id && activeTab === 'purchases') {
+      loadPurchases();
+    }
+  }, [user?.id, activeTab]);
+
+  const loadPurchases = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoadingPurchases(true);
+      const response = await purchaseApi.getUserPurchases(user.id);
+      
+      // Convert backend format to frontend format
+      const convertedActivities: MarketplaceActivity[] = response.activities.map((a: any) => ({
+        id: a.id,
+        title: a.title,
+        type: a.type as any,
+        language: a.language as any,
+        description: a.description || '',
+        elements: a.elements || [],
+        createdAt: new Date(a.createdAt),
+        updatedAt: new Date(a.updatedAt),
+        authorId: a.authorId,
+        isPublished: a.isPublished,
+        tags: a.tags || [],
+        author: a.author || {
+          id: a.authorId,
+          name: 'Unknown',
+          region: 'north',
+        },
+        price: a.price || 0,
+        pricingModel: a.pricingModel || 'free',
+        purchaseCount: a.purchaseCount || 0,
+        rating: a.rating || 0,
+        reviewCount: a.reviewCount || 0,
+        ageRange: a.ageRange,
+        therapyGoals: a.therapyGoals || [],
+        diagnosisTags: a.diagnosisTags || [],
+      }));
+      
+      setPurchasedActivities(convertedActivities);
+    } catch (err: any) {
+      console.error('Error loading purchases:', err);
+      // Fallback to local purchases
+      const localPurchased = publishedActivities.filter(activity => 
+        purchases.some(p => p.activityId === activity.id && p.userId === user?.id)
+      );
+      setPurchasedActivities(localPurchased);
+    } finally {
+      setLoadingPurchases(false);
+    }
+  };
 
   const handleSelectTutor = (tutorId: string) => {
     setSelectedTutorId(tutorId);
@@ -482,7 +536,14 @@ export function FamilyDashboard() {
           </TabsContent>
 
           <TabsContent value="purchases" className="mt-6">
-            {purchasedActivities.length === 0 ? (
+            {loadingPurchases ? (
+              <Card className="p-12 text-center">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-2">Loading purchases...</h3>
+              </Card>
+            ) : purchasedActivities.length === 0 ? (
               <Card className="p-12 text-center">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <ShoppingBag className="w-8 h-8 text-muted-foreground" />
