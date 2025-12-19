@@ -54,7 +54,7 @@ export function Header({ showBack, onBack, title }: HeaderProps) {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
               userRole === 'tutor' ? 'gradient-warm' : 'gradient-cool'
             }`}>

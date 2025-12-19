@@ -156,18 +156,18 @@ export function AuthoringStudio() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handlePreview}>
+          {/* <Button variant="ghost" size="sm" onClick={handlePreview}>
             <Play className="w-4 h-4 mr-2" />
             Preview
           </Button>
           <Button variant="ghost" size="sm">
             <Download className="w-4 h-4 mr-2" />
             Export
-          </Button>
-          <Button variant="ghost" size="sm">
+          </Button> */}
+          {/* <Button variant="ghost" size="sm">
             <Share2 className="w-4 h-4 mr-2" />
             Share
-          </Button>
+          </Button> */}
           <Button variant="default" size="sm" onClick={() => setShowSaveDialog(true)}>
             <Save className="w-4 h-4 mr-2" />
             Save
